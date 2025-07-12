@@ -19,3 +19,12 @@
 
 - In the 2FA after the user has logged In there and is redirected to the 2FA code, behind the scenes if logic flawed user might gets logged in on via username:password, a simple change of the route from 
 /2FA to /my-acount can help bypass the 2FA.
+
+- In most of the website the check on the user is made by assigning a code or cookie as the identfier on the initial login, so that backend can manage the state of user and identity of the user, but it could be miss used, if user logins with his account and verify using the 2FA code which I sent for his own account and then at the last moment changes the cookie identifier with the victims identifier it could make the user login to victims account.
+- The following labs explain the matter in detail:
+	
+	  ```
+	https://portswigger.net/web-security/learning-paths/authentication-vulnerabilities/vulnerabilities-in-multi-factor-authentication/authentication/multi-factor/flawed-two-factor-verification-logic	
+	  
+	  ```
+- the auth vuln can also occur in the remember functionality of the website, in order check the login status of the user most of the web apps use the coookie hash which if it is losely bounded could and the weak predicatable hash is used it could be exploited by generating a payload, which returns a true session token which is present in the DB of the web app, with that session token attacker can log in easily.
