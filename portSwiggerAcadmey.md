@@ -28,3 +28,26 @@
 	  
 	  ```
 - the auth vuln can also occur in the remember functionality of the website, in order check the login status of the user most of the web apps use the coookie hash which if it is losely bounded could and the weak predicatable hash is used it could be exploited by generating a payload, which returns a true session token which is present in the DB of the web app, with that session token attacker can log in easily.
+ 
+- The reset password functionality using the reset link is also vulnerable, what is the user changes the reset link to its on name or desired user and on going to the reset page it can change the password to desired password.
+
+
+```
+https://reset-password.com/reset?=your-name
+
+```
+
+- User can change the your-name with user which they want to exploit.
+
+
+- if the reset functionality is implemented using the hash we can check how the password is reset wheter the token is reused to validate the user or not or is it using the username to validate, if that is the case we can change the username with the with implied useranme and login into the account using the changed password. 
+
+
+- If the auth-token is implemented to reset the password we can try leak the that token to our on web-server using the **X-Forwarded-Host** refer to this lab:
+
+
+```
+
+https://portswigger.net/web-security/learning-paths/authentication-vulnerabilities/vulnerabilities-in-other-authentication-mechanisms/authentication/other-mechanisms/lab-password-reset-poisoning-via-middleware
+
+```
