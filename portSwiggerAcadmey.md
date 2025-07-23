@@ -51,3 +51,7 @@ https://reset-password.com/reset?=your-name
 https://portswigger.net/web-security/learning-paths/authentication-vulnerabilities/vulnerabilities-in-other-authentication-mechanisms/authentication/other-mechanisms/lab-password-reset-poisoning-via-middleware
 
 ```
+
+# Access Control vulns:
+
+- These vulnerabilities occur when user with lesser privilages, some how manage to have access to the privilage of the root user or the one with more privilges, there are different types of it but we don't have to go into that details. 
